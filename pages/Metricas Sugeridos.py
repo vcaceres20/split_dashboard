@@ -4,8 +4,8 @@ import numpy as np
 
 from shared import MES_MAP, load_df_cus, load_df_sugeridos
 
-st.set_page_config(page_title="Metricas Sugeridos", layout="wide")
-st.title("Metricas Sugeridos")
+st.set_page_config(page_title="Métricas Sugeridos", layout="wide")
+st.title("Métricas Sugeridos")
 
 # Carga de datos
 _df_base = load_df_cus()
@@ -88,6 +88,7 @@ filtro["periodo_label"] = filtro["periodo_mes"].apply(lambda x: f"{MES_MAP.get(x
 resumen = (
     filtro.groupby(["periodo_mes", "periodo_label"], as_index=False)
     .agg(
+        clientes_sugeridos=("cod_cliente_alicorp_actual", "nunique"),
         vol_plan_total=("vol_plan", "sum"),
         dif_abs_total=("vol_sugerido", lambda s: 0.0),
     )
@@ -106,10 +107,11 @@ resumen = resumen.sort_values("periodo_mes")
 
 st.subheader("Resumen de Adherencia por Mes")
 st.dataframe(
-    resumen[["periodo_label", "vol_plan_total", "dif_abs_total", "adherencia_sugerido"]]
+    resumen[["periodo_label", "clientes_sugeridos", "vol_plan_total", "dif_abs_total", "adherencia_sugerido"]]
     .rename(
         columns={
             "periodo_label": "Periodo",
+            "clientes_sugeridos": "N° Clientes Sugeridos",
             "vol_plan_total": "Vol Plan Total",
             "dif_abs_total": "Sum Abs(Sugerido - Plan)",
             "adherencia_sugerido": "Adherencia Sugerido",
@@ -117,6 +119,7 @@ st.dataframe(
     )
     .style.format(
         {
+            "N° Clientes Sugeridos": "{:,.0f}",
             "Vol Plan Total": "{:,.0f}",
             "Sum Abs(Sugerido - Plan)": "{:,.0f}",
             "Adherencia Sugerido": "{:.1%}",
