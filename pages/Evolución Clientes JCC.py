@@ -578,6 +578,9 @@ pivot_data = pivot_data[cols]
 if meses_ordenados:
     mask_vacias = pivot_data[meses_ordenados].isna().all(axis=1)
     pivot_data = pivot_data[~mask_vacias].copy()
+    # Excluir clientes con 5 o más meses vacíos en el cuadro principal.
+    mask_nulos_principal = pivot_data[meses_ordenados].isna().sum(axis=1) < 5
+    pivot_data = pivot_data[mask_nulos_principal].copy()
 
 # Quitar filas sin código de cliente
 pivot_data = pivot_data[pivot_data["Código Cliente"].astype(str).str.strip() != ""].copy()
@@ -891,9 +894,20 @@ else:
             if cod_col is not None:
                 mask_cod = tabla_comb[cod_col].astype(str).str.strip() != ""
                 tabla_comb = tabla_comb[mask_cod].copy()
+                # Ordenar filas: seleccionados primero (en orden de clic), luego el resto.
+                if selected_clientes_orden:
+                    orden_sel_map = {cod: i for i, cod in enumerate(selected_clientes_orden)}
+                    codigos_tabla = tabla_comb[cod_col].astype(str).str.strip()
+                    tabla_comb["_ord_sel"] = codigos_tabla.map(orden_sel_map)
+                    tabla_comb["_is_sel"] = codigos_tabla.isin(selected_clientes_orden)
+                    tabla_comb = tabla_comb.sort_values(
+                        by=["_is_sel", "_ord_sel"],
+                        ascending=[False, True],
+                        kind="stable",
+                    ).drop(columns=["_ord_sel", "_is_sel"])
 
             # Excluir clientes con exceso de nulos en la ventana de periodos seleccionada.
-            # Regla: si tiene más de 5 valores None/NaN en Plan/Real/Cumplimiento, no se muestra.
+            # Regla: si tiene 5 o más valores None/NaN en Plan/Real/Cumplimiento, no se muestra.
             cols_nulos = [
                 c
                 for c in tabla_comb.columns
@@ -902,7 +916,7 @@ else:
                 and c[1] in periodos_ordenados
             ]
             if cols_nulos:
-                mask_nulos = tabla_comb[cols_nulos].isna().sum(axis=1) <= 5
+                mask_nulos = tabla_comb[cols_nulos].isna().sum(axis=1) < 5
                 tabla_comb = tabla_comb[mask_nulos].copy()
 
             # Matriz de estilos para resaltar meses sugeridos en Plan y Cumplimiento
