@@ -806,12 +806,13 @@ else:
     base["cumplimiento"] = np.where(base["plan"] > 0, base["real"] / base["plan"], np.nan)
 
     jcc_lista = sorted([j for j in jcc_sel if j != SIN_DATO_LABEL])
+    single_jcc_mode = len(jcc_lista) == 1
     for jcc in jcc_lista:
         df_j = base[base["JCC"] == jcc].copy()
         if df_j.empty:
             continue
 
-        with st.expander(f"JCC: {jcc}", expanded=False):
+        with st.expander(f"JCC: {jcc}", expanded=single_jcc_mode):
             idx_cols = ["cod_cliente_alicorp_actual", "nom_cliente_alicorp_actual"]
 
             def _pivot(valor_col):
@@ -890,6 +891,19 @@ else:
             if cod_col is not None:
                 mask_cod = tabla_comb[cod_col].astype(str).str.strip() != ""
                 tabla_comb = tabla_comb[mask_cod].copy()
+
+            # Excluir clientes con exceso de nulos en la ventana de periodos seleccionada.
+            # Regla: si tiene más de 5 valores None/NaN en Plan/Real/Cumplimiento, no se muestra.
+            cols_nulos = [
+                c
+                for c in tabla_comb.columns
+                if isinstance(c, tuple)
+                and c[0] in ["Plan", "Real", "Cumplimiento"]
+                and c[1] in periodos_ordenados
+            ]
+            if cols_nulos:
+                mask_nulos = tabla_comb[cols_nulos].isna().sum(axis=1) <= 5
+                tabla_comb = tabla_comb[mask_nulos].copy()
 
             # Matriz de estilos para resaltar meses sugeridos en Plan y Cumplimiento
             estilos_sug = pd.DataFrame("", index=tabla_comb.index, columns=tabla_comb.columns)
@@ -1032,7 +1046,7 @@ else:
                     st.success("Planes guardados.")
 
 
-            exp_height = max(320, 36 + len(tabla_comb) * 24)
+            exp_height = max(460, 36 + len(tabla_comb) * 24)
             st.dataframe(styled, use_container_width=True, hide_index=True, height=exp_height)
 
             # Graficos de evolucion por cliente (2 por fila)
@@ -1084,10 +1098,11 @@ else:
             if clientes_jcc:
                 st.markdown("**Evolución por cliente**")
             cols = None
+            cards_per_row = 4 if single_jcc_mode else 2
             for idx_cli, (cod_cli, nom_cli) in enumerate(clientes_jcc):
-                if idx_cli % 2 == 0:
-                    cols = st.columns(2)
-                col = cols[0] if idx_cli % 2 == 0 else cols[1]
+                if idx_cli % cards_per_row == 0:
+                    cols = st.columns(cards_per_row)
+                col = cols[idx_cli % cards_per_row]
 
                 df_c = df_chart[df_chart["cod_cliente_alicorp_actual"] == str(cod_cli)].copy()
                 serie = (
@@ -1134,7 +1149,7 @@ else:
                             alt.Tooltip("Valor:Q", title="Valor", format=",.0f"),
                         ],
                     )
-                    .properties(height=220, title="")
+                    .properties(height=170 if single_jcc_mode else 220, title="")
                 )
                 with col:
                     st.markdown(f"**{nom_cli}**")
