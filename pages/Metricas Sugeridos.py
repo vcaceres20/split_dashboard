@@ -1,8 +1,8 @@
-import streamlit as st
+﻿import streamlit as st
 import pandas as pd
 import numpy as np
 
-from shared import MES_MAP, load_df_cus, load_df_sugeridos
+from shared import MES_MAP, ensure_multiselect_state, load_df_cus, load_df_sugeridos
 
 st.set_page_config(page_title="Métricas Sugeridos", layout="wide")
 st.title("Métricas Sugeridos")
@@ -61,7 +61,8 @@ sug_det["vol_real"] = sug_det["vol_real"].fillna(0.0)
 # Sidebar filtros
 st.sidebar.title("Filtros")
 anios = sorted(sug_det["anio"].dropna().astype(int).unique().tolist(), reverse=True)
-anio_sel = st.sidebar.multiselect("A?o", anios, default=anios)
+ensure_multiselect_state("met_anio", anios, default=anios)
+anio_sel = st.sidebar.multiselect("Año", anios, key="met_anio")
 
 meses_disponibles = (
     sug_det[sug_det["anio"].isin(anio_sel)]["mes_nombre"].dropna().unique().tolist()
@@ -70,7 +71,8 @@ meses_disponibles = (
 )
 orden_meses = [MES_MAP[m] for m in range(1, 13)]
 meses_sel_default = [m for m in orden_meses if m in meses_disponibles]
-meses_sel = st.sidebar.multiselect("Mes", meses_sel_default, default=meses_sel_default)
+ensure_multiselect_state("met_mes", meses_sel_default, default=meses_sel_default)
+meses_sel = st.sidebar.multiselect("Mes", meses_sel_default, key="met_mes")
 
 filtro = sug_det.copy()
 if anio_sel:
@@ -100,7 +102,7 @@ _dif_mes = _dif.groupby("periodo_mes", as_index=False).agg(dif_abs_total=("dif_a
 resumen = resumen.drop(columns=["dif_abs_total"]).merge(_dif_mes, on="periodo_mes", how="left")
 resumen["adherencia_sugerido"] = np.where(
     resumen["vol_plan_total"] > 0,
-    resumen["dif_abs_total"] / resumen["vol_plan_total"],
+    1 - (resumen["dif_abs_total"] / resumen["vol_plan_total"]),
     np.nan,
 )
 resumen = resumen.sort_values("periodo_mes")

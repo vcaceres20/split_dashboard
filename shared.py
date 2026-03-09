@@ -79,7 +79,7 @@ def matriz_nivel_x_dimension(df, dim_col, tipo_key):
     return pt_pct
 
 
-def multiselect_con_nulos(label, serie, opciones_override=None):
+def multiselect_con_nulos(label, serie, opciones_override=None, key=None):
     if opciones_override is None:
         opciones = sorted(serie.dropna().unique().tolist())
     else:
@@ -90,14 +90,45 @@ def multiselect_con_nulos(label, serie, opciones_override=None):
     meses_orden = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic"]
     if label == "Mes":
         opciones = [m for m in meses_orden if m in opciones]
-    if serie.isna().any():
+    if serie.isna().any() and SIN_DATO_LABEL not in opciones:
         opciones.append(SIN_DATO_LABEL)
-    seleccion = st.sidebar.multiselect(label, opciones, default=opciones)
+    if key is not None:
+        ensure_multiselect_state(key, opciones, default=opciones)
+        seleccion = st.sidebar.multiselect(label, opciones, key=key)
+    else:
+        seleccion = st.sidebar.multiselect(label, opciones, default=opciones)
     valores_validos = [val for val in seleccion if val != SIN_DATO_LABEL]
     mask = serie.isin(valores_validos)
     if SIN_DATO_LABEL in seleccion:
         mask = mask | serie.isna()
     return seleccion, mask
+
+
+def ensure_multiselect_state(key, options, default=None):
+    options = list(options)
+    if key in st.session_state:
+        current = st.session_state.get(key, [])
+        if not isinstance(current, list):
+            current = [current]
+        st.session_state[key] = [val for val in current if val in options]
+        return st.session_state[key]
+
+    if default is None:
+        st.session_state[key] = options
+    else:
+        default_vals = list(default) if isinstance(default, (list, tuple, set)) else [default]
+        st.session_state[key] = [val for val in default_vals if val in options]
+    return st.session_state[key]
+
+
+def ensure_radio_state(key, options, default=None):
+    options = list(options)
+    if not options:
+        st.session_state[key] = None
+        return None
+    if key not in st.session_state or st.session_state.get(key) not in options:
+        st.session_state[key] = default if default in options else options[0]
+    return st.session_state[key]
 
 
 
@@ -147,7 +178,8 @@ def calcular_abc_dinamico(df_base):
     )
     return abc[["cod_cliente_alicorp_actual", "ABC"]]
 
-BQ_SOURCE_TABLE = "acpe-dev-uc-ml.dev.vcc_split_streamlit"
+BQ_TABLE_MARCA_CMP = "acpe-dev-uc-ml.dev.vcc_split_streamlit"
+BQ_SOURCE_TABLE = BQ_TABLE_MARCA_CMP
 
 
 def _get_bq_client():
@@ -174,7 +206,6 @@ def load_df_base_raw():
     query = f"SELECT * FROM `{BQ_SOURCE_TABLE}`"
     rows = [dict(r) for r in client.query(query).result()]
     return pd.DataFrame(rows)
-
 
 def _prepare_base_df(df_raw):
     df = df_raw.copy()
@@ -220,6 +251,7 @@ def _prepare_base_df(df_raw):
     return df
 
 
+@st.cache_data(ttl=600, show_spinner=False)
 def load_df_cus():
     # Carga base desde BigQuery y aplica transformaciones
     df = _prepare_base_df(load_df_base_raw())
@@ -264,6 +296,7 @@ def load_df_cus():
     return df_cus
 
 
+@st.cache_data(ttl=600, show_spinner=False)
 def load_df_with_categoria():
     """
     Carga el dataframe con la columna des_categoria para an?lisis de mix por categor?a.
@@ -366,6 +399,7 @@ def _xlsx_sheet_to_dataframe_no_openpyxl(path, sheet_name="Consolidado"):
         return pd.DataFrame(records)
 
 
+@st.cache_data(ttl=600, show_spinner=False)
 def load_df_sugeridos():
     path = Path("inputs") / "Consolidado Sugeridos.xlsx"
     if not path.exists():

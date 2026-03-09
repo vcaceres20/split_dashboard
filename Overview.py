@@ -1,4 +1,4 @@
-# app.py
+﻿# app.py
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -10,6 +10,8 @@ from shared import (
     LABELS_INTERVALO,
     MES_MAP,
     SIN_DATO_LABEL,
+    ensure_multiselect_state,
+    ensure_radio_state,
     tabla_histograma,
     matriz_nivel_x_dimension,
     multiselect_con_nulos,
@@ -27,27 +29,66 @@ df = load_df_cus()
 # ======================================================
 st.sidebar.title("Filtros")
 
-tipo = st.sidebar.radio("Tipo", ["Soles", "Volumen"])
+ensure_radio_state("ov_tipo", ["Soles", "Volumen"], default="Soles")
+tipo = st.sidebar.radio("Tipo", ["Soles", "Volumen"], key="ov_tipo")
 tipo_key = "sol" if tipo == "Soles" else "vol"
 
-anios = sorted(df["año"].dropna().unique())
-anio_sel = st.sidebar.multiselect("Año", anios, default=anios)
+anios = sorted(df["a?o"].dropna().unique())
+default_anios = [a for a in [2025, 2026] if a in anios]
+if not default_anios:
+    default_anios = anios
+ensure_multiselect_state("ov_anio", anios, default=default_anios)
+anio_sel = st.sidebar.multiselect("Año", anios, key="ov_anio")
 
-mes_opciones = df[df["año"].isin(anio_sel)]["mes_nombre"] if anio_sel else df["mes_nombre"].iloc[0:0]
-mes_sel, mask_mes = multiselect_con_nulos("Mes", df["mes_nombre"], opciones_override=mes_opciones)
-abc_sel, mask_abc = multiselect_con_nulos("ABC", df["ABC"])
-region_sel, mask_region = multiselect_con_nulos("Región", df["des_oficina_venta_alicorp"])
-canal_sel, mask_canal = multiselect_con_nulos("Canal", df["des_grupo_precio_alicorp"])
-zona_sel, mask_zona = multiselect_con_nulos("Zona", df["des_grupo_vendedor_alicorp"])
+df_periodos = df[df["a?o"].isin(anio_sel)] if anio_sel else df.iloc[0:0]
+periodos_ordenados = sorted(df_periodos["periodo_mes"].dropna().unique().tolist())
+periodo_labels = [f"{MES_MAP.get(p.month, p.strftime('%m'))} {p.year}" for p in periodos_ordenados]
+periodo_map = dict(zip(periodo_labels, periodos_ordenados))
+default_labels = periodo_labels[-7:] if len(periodo_labels) > 7 else periodo_labels
+ensure_multiselect_state("ov_periodo", periodo_labels, default=default_labels)
+periodo_sel = st.sidebar.multiselect("Mes-Año", periodo_labels, key="ov_periodo")
+st.sidebar.checkbox(
+    "Seleccionar todo Mes-Año",
+    key="sel_all_periodo_overview",
+    on_change=lambda: st.session_state.__setitem__("ov_periodo", periodo_labels),
+)
+periodo_sel_dt = [periodo_map[p] for p in periodo_sel]
+mask_periodo = df["periodo_mes"].isin(periodo_sel_dt)
+abc_sel, mask_abc = multiselect_con_nulos("ABC", df["ABC"], key="ov_abc")
+region_sel, mask_region = multiselect_con_nulos("Región", df["des_oficina_venta_alicorp"], key="ov_region")
+canal_sel, mask_canal = multiselect_con_nulos("Canal", df["des_grupo_precio_alicorp"], key="ov_canal")
+
+zona_opciones = sorted(df["des_grupo_vendedor_alicorp"].dropna().unique().tolist())
+if df["des_grupo_vendedor_alicorp"].isna().any():
+    zona_opciones.append(SIN_DATO_LABEL)
+zona_sel, mask_zona = multiselect_con_nulos(
+    "Zona", df["des_grupo_vendedor_alicorp"], opciones_override=zona_opciones, key="ov_zona"
+)
+st.sidebar.checkbox(
+    "Seleccionar todo Zona",
+    key="sel_all_zona_overview",
+    on_change=lambda: st.session_state.__setitem__("ov_zona", zona_opciones),
+)
+
+jcc_opciones = sorted(df["JCC"].dropna().unique().tolist())
+if df["JCC"].isna().any():
+    jcc_opciones.append(SIN_DATO_LABEL)
+jcc_sel, mask_jcc = multiselect_con_nulos("JCC", df["JCC"], opciones_override=jcc_opciones, key="ov_jcc")
+st.sidebar.checkbox(
+    "Seleccionar todo JCC",
+    key="sel_all_jcc_overview",
+    on_change=lambda: st.session_state.__setitem__("ov_jcc", jcc_opciones),
+)
 
 # Aplicar filtros
 df_filt = df[
     df["año"].isin(anio_sel)
-    & mask_mes
+    & mask_periodo
     & mask_abc
     & mask_region
     & mask_canal
     & mask_zona
+    & mask_jcc
 ].copy()
 
 # KPIs: totales según filtros del sidebar
@@ -285,7 +326,10 @@ if not tabla_hist.empty:
                 ),
                 legend=None
             ),
-            tooltip=[inter_col, "valor"]
+            tooltip=[
+                alt.Tooltip(f"{inter_col}:N", title="Intervalo"),
+                alt.Tooltip("valor:Q", title="Valor", format=",.0f"),
+            ]
         )
     )
     st.altair_chart(chart_hist, use_container_width=True)
@@ -343,8 +387,11 @@ etiquetas_leyenda = [
     "Nivel 5 — Más de 115%",
 ]
 
-cols_ley = st.columns(len(colores_leyenda))
-for c, color, label in zip(cols_ley, colores_leyenda, etiquetas_leyenda):
+colores_leyenda_rev = list(reversed(colores_leyenda))
+etiquetas_leyenda_rev = list(reversed(etiquetas_leyenda))
+
+cols_ley = st.columns(len(colores_leyenda_rev))
+for c, color, label in zip(cols_ley, colores_leyenda_rev, etiquetas_leyenda_rev):
     c.markdown(
         f"<div style='display:flex;align-items:center'><div style='background:{color};width:18px;height:18px;border-radius:3px;margin-right:8px;'></div><div>{label}</div></div>",
         unsafe_allow_html=True,
@@ -375,7 +422,8 @@ else:
     evo = evo.dropna(subset=[nivel_col]).copy()
     evo["Nivel"] = evo[nivel_col].astype(int).astype(str)
 
-    colores_nivel = colores_leyenda
+    colores_nivel = colores_leyenda_rev
+    niveles_orden = ["5", "4", "3", "2", "1"]
 
     chart_evo = (
         alt.Chart(evo)
@@ -386,7 +434,8 @@ else:
             color=alt.Color(
                 "Nivel:N",
                 title="Nivel",
-                scale=alt.Scale(domain=["1", "2", "3", "4", "5"], range=colores_nivel),
+                scale=alt.Scale(domain=niveles_orden, range=colores_nivel),
+                sort=niveles_orden,
             ),
             tooltip=[
                 alt.Tooltip("periodo_label:N", title="Periodo"),
@@ -395,7 +444,25 @@ else:
             ],
         )
     )
-    st.altair_chart(chart_evo, use_container_width=True)
+
+    chart_text = (
+        alt.Chart(evo)
+        .transform_stack(
+            stack="pct",
+            groupby=["periodo_label"],
+            sort=[alt.SortField("Nivel", order="descending")],
+            as_=["y0", "y1"],
+        )
+        .mark_text(size=10, color="black", dy=-6)
+        .encode(
+            x=alt.X("periodo_label:N", sort=periodos_ordenados),
+            y=alt.Y("y0:Q"),
+            text=alt.Text("pct:Q", format=".0%"),
+            detail="Nivel:N",
+            tooltip=[],
+        )
+    )
+    st.altair_chart(chart_evo + chart_text, use_container_width=True)
 
     tabla_niv = evo.pivot_table(index="periodo_label", columns="Nivel", values="pct", aggfunc="sum")
     orden_presentes = [p for p in periodos_ordenados if p in tabla_niv.index]
@@ -403,12 +470,31 @@ else:
 
     # Renombrar columnas para que digan "Nivel 1", "Nivel 2", etc.
     tabla_niv.columns = [f"Nivel {col}" for col in tabla_niv.columns]
+    # Reordenar columnas de nivel (5 a 1)
+    orden_cols = [f"Nivel {n}" for n in ["5", "4", "3", "2", "1"] if f"Nivel {n}" in tabla_niv.columns]
+    tabla_niv = tabla_niv[orden_cols]
     tabla_niv.index.name = "Periodo"
+
+    estilos_por_nivel = {
+        "Nivel 5": "background-color: #FF430F; color: white",
+        "Nivel 4": "background-color: #FFBF9C; color: black",
+        "Nivel 3": "background-color: #A4FF4A; color: black",
+        "Nivel 2": "background-color: #EFFF1C; color: black",
+        "Nivel 1": "background-color: #736867; color: white",
+    }
+
+    styled_niv = (
+        tabla_niv.style
+        .format("{:.1%}")
+        .set_properties(**{"text-align": "center"})
+    )
+    for col in tabla_niv.columns:
+        if col in estilos_por_nivel:
+            color_css = estilos_por_nivel[col]
+            styled_niv = styled_niv.applymap(lambda _, css=color_css: css, subset=[col])
 
     st.caption(f"Tabla % {metrica_label} por nivel y mes")
     st.dataframe(
-        tabla_niv.style
-        .format("{:.1%}")
-        .set_properties(**{'text-align': 'center'}),
+        styled_niv,
         use_container_width=True
     )
