@@ -996,6 +996,23 @@ else:
                             st.session_state[f"plan_obs_{jcc}"][cod] = str(obs).strip()
 
                     st.session_state["plan_descarga"] = st.session_state.get("plan_descarga", [])
+                    fecha_actual = pd.Timestamp.now()
+                    meses_nombre = {
+                        1: "Enero",
+                        2: "Febrero",
+                        3: "Marzo",
+                        4: "Abril",
+                        5: "Mayo",
+                        6: "Junio",
+                        7: "Julio",
+                        8: "Agosto",
+                        9: "Septiembre",
+                        10: "Octubre",
+                        11: "Noviembre",
+                        12: "Diciembre",
+                    }
+                    mes_actual = meses_nombre.get(fecha_actual.month, "")
+                    anio_actual = int(fecha_actual.year)
                     for _, row in edited.iterrows():
                         cod = str(row["Código Cliente"]).strip()
                         val = row["Plan Ingresado"]
@@ -1008,6 +1025,8 @@ else:
                                 "nom_cliente_alicorp_actual": row["Nombre Cliente"],
                                 "plan_ingresado": str(val).strip(),
                                 "observaciones": str(row.get("Observaciones", "")).strip(),
+                                "mes": mes_actual,
+                                "anio": anio_actual,
                             }
                         )
                     st.success("Planes guardados.")
@@ -1243,6 +1262,33 @@ if isinstance(st.session_state.get("plan_descarga"), list):
 
 if rows_descarga:
     df_descarga = pd.DataFrame(rows_descarga)
+    if "mes" not in df_descarga.columns or "anio" not in df_descarga.columns:
+        fecha_actual = pd.Timestamp.now()
+        meses_nombre = {
+            1: "Enero",
+            2: "Febrero",
+            3: "Marzo",
+            4: "Abril",
+            5: "Mayo",
+            6: "Junio",
+            7: "Julio",
+            8: "Agosto",
+            9: "Septiembre",
+            10: "Octubre",
+            11: "Noviembre",
+            12: "Diciembre",
+        }
+        mes_actual = meses_nombre.get(fecha_actual.month, "")
+        anio_actual = int(fecha_actual.year)
+        if "mes" not in df_descarga.columns:
+            df_descarga["mes"] = mes_actual
+        if "anio" not in df_descarga.columns:
+            df_descarga["anio"] = anio_actual
+    if "año" in df_descarga.columns and "anio" not in df_descarga.columns:
+        df_descarga = df_descarga.rename(columns={"año": "anio"})
+    cols_front = [c for c in df_descarga.columns if c not in ["mes", "anio"]]
+    cols_end = [c for c in ["mes", "anio"] if c in df_descarga.columns]
+    df_descarga = df_descarga[cols_front + cols_end]
     st.download_button(
         "Descargar CSV",
         df_descarga.to_csv(index=False),
