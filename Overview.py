@@ -485,7 +485,7 @@ else:
 
     styled_niv = (
         tabla_niv.style
-        .format("{:.1%}")
+        .format("{:.0%}")
         .set_properties(**{"text-align": "center"})
     )
     for col in tabla_niv.columns:
