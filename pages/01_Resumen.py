@@ -6,7 +6,6 @@ import altair as alt
 from shared import (
     MES_MAP,
     SIN_DATO_LABEL,
-    ensure_multiselect_state,
     multiselect_con_nulos,
     load_df_base_raw,
     load_df_cus,
@@ -18,6 +17,26 @@ st.title("Resumen")
 # Cargar datos
 df_query = load_df_base_raw()
 df = load_df_cus()
+
+
+def _restore_multiselect(widget_key, memory_key, options, default):
+    opts = list(options)
+    default_vals = list(default) if isinstance(default, (list, tuple, set)) else [default]
+    default_vals = [v for v in default_vals if v in opts]
+
+    if widget_key not in st.session_state:
+        prev = st.session_state.get(memory_key, default_vals)
+        if not isinstance(prev, list):
+            prev = [prev]
+        st.session_state[widget_key] = [v for v in prev if v in opts]
+    else:
+        cur = st.session_state.get(widget_key, [])
+        if not isinstance(cur, list):
+            cur = [cur]
+        st.session_state[widget_key] = [v for v in cur if v in opts]
+
+    if not st.session_state.get(widget_key) and default_vals:
+        st.session_state[widget_key] = default_vals
 
 st.download_button(
     "Descargar base",
@@ -32,16 +51,18 @@ anios = sorted(df["año"].dropna().unique())
 default_anios = [a for a in [2025, 2026] if a in anios]
 if not default_anios:
     default_anios = anios
-ensure_multiselect_state("res_anio", anios, default=default_anios)
+_restore_multiselect("res_anio", "res_mem_anio", anios, default_anios)
 anio_sel = st.sidebar.multiselect("Año", anios, key="res_anio")
+st.session_state["res_mem_anio"] = anio_sel
 
 df_periodos = df[df["año"].isin(anio_sel)] if anio_sel else df.iloc[0:0]
 periodos_ordenados = sorted(df_periodos["periodo_mes"].dropna().unique().tolist())
 periodo_labels = [f"{MES_MAP.get(p.month, p.strftime('%m'))} {p.year}" for p in periodos_ordenados]
 periodo_map = dict(zip(periodo_labels, periodos_ordenados))
 default_labels = periodo_labels[-7:] if len(periodo_labels) > 7 else periodo_labels
-ensure_multiselect_state("res_periodo", periodo_labels, default=default_labels)
+_restore_multiselect("res_periodo", "res_mem_periodo", periodo_labels, default_labels)
 periodo_sel = st.sidebar.multiselect("Mes-Año", periodo_labels, key="res_periodo")
+st.session_state["res_mem_periodo"] = periodo_sel
 st.sidebar.checkbox(
     "Seleccionar todo Mes-Año",
     key="sel_all_periodo_resumen",
@@ -50,15 +71,34 @@ st.sidebar.checkbox(
 periodo_sel_dt = [periodo_map[p] for p in periodo_sel]
 mask_periodo = df["periodo_mes"].isin(periodo_sel_dt)
 
+abc_opciones = sorted(df["ABC"].dropna().unique().tolist())
+if df["ABC"].isna().any():
+    abc_opciones.append(SIN_DATO_LABEL)
+_restore_multiselect("res_abc", "res_mem_abc", abc_opciones, abc_opciones)
 abc_sel, mask_abc = multiselect_con_nulos("ABC", df["ABC"], key="res_abc")
+st.session_state["res_mem_abc"] = abc_sel
+
+region_opciones = sorted(df["des_oficina_venta_alicorp"].dropna().unique().tolist())
+if df["des_oficina_venta_alicorp"].isna().any():
+    region_opciones.append(SIN_DATO_LABEL)
+_restore_multiselect("res_region", "res_mem_region", region_opciones, region_opciones)
 region_sel, mask_region = multiselect_con_nulos("Región", df["des_oficina_venta_alicorp"], key="res_region")
+st.session_state["res_mem_region"] = region_sel
+
+canal_opciones = sorted(df["des_grupo_precio_alicorp"].dropna().unique().tolist())
+if df["des_grupo_precio_alicorp"].isna().any():
+    canal_opciones.append(SIN_DATO_LABEL)
+_restore_multiselect("res_canal", "res_mem_canal", canal_opciones, canal_opciones)
 canal_sel, mask_canal = multiselect_con_nulos("Canal", df["des_grupo_precio_alicorp"], key="res_canal")
+st.session_state["res_mem_canal"] = canal_sel
 zona_opciones = sorted(df["des_grupo_vendedor_alicorp"].dropna().unique().tolist())
 if df["des_grupo_vendedor_alicorp"].isna().any():
     zona_opciones.append(SIN_DATO_LABEL)
+_restore_multiselect("res_zona", "res_mem_zona", zona_opciones, zona_opciones)
 zona_sel, mask_zona = multiselect_con_nulos(
     "Zona", df["des_grupo_vendedor_alicorp"], opciones_override=zona_opciones, key="res_zona"
 )
+st.session_state["res_mem_zona"] = zona_sel
 st.sidebar.checkbox(
     "Seleccionar todo Zona",
     key="sel_all_zona_resumen",
@@ -68,7 +108,9 @@ st.sidebar.checkbox(
 jcc_opciones = sorted(df["JCC"].dropna().unique().tolist())
 if df["JCC"].isna().any():
     jcc_opciones.append(SIN_DATO_LABEL)
+_restore_multiselect("res_jcc", "res_mem_jcc", jcc_opciones, jcc_opciones)
 jcc_sel, mask_jcc = multiselect_con_nulos("JCC", df["JCC"], opciones_override=jcc_opciones, key="res_jcc")
+st.session_state["res_mem_jcc"] = jcc_sel
 st.sidebar.checkbox(
     "Seleccionar todo JCC",
     key="sel_all_jcc_resumen",
