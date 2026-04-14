@@ -332,7 +332,7 @@ with col_centro:
         })
         .apply(color_fila_rebate, axis=1)
         .set_properties(**{'text-align': 'center'}),
-        width='stretch',
+        use_container_width=True,
         hide_index=True
     )
 
@@ -405,7 +405,7 @@ with col_r:
             mat_reg.style
             .format("{:.0%}")
             .set_properties(**{'text-align': 'center'}),
-            width='stretch'
+            use_container_width=True
         )
     else:
         st.write("Sin datos.")
@@ -418,7 +418,7 @@ with col_c:
             mat_can.style
             .format("{:.0%}")
             .set_properties(**{'text-align': 'center'}),
-            width='stretch'
+            use_container_width=True
         )
     else:
         st.write("Sin datos.")
@@ -549,6 +549,6 @@ else:
     st.caption(f"Tabla % {metrica_label} por nivel y mes")
     st.dataframe(
         styled_niv,
-        width='stretch'
+        use_container_width=True
     )
 

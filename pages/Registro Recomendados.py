@@ -84,5 +84,5 @@ else:
     if df_view.empty:
         st.info("No hay clientes recomendados para el periodo actual.")
     else:
-        st.dataframe(df_view, width='stretch', hide_index=True)
+        st.dataframe(df_view, use_container_width=True, hide_index=True)
 

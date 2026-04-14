@@ -299,7 +299,7 @@ def render_detalle_cliente(df_all, df_cat_all, df_sug_all, cliente_cod, nombre_c
             subset=["Cump"],
         ).set_properties(**{"text-align": "center"})
 
-        st.dataframe(styled_sol, width='stretch', hide_index=True)
+        st.dataframe(styled_sol, use_container_width=True, hide_index=True)
 
     with col_grafico_sol:
         chart_data_sol = df_det[["periodo_label", "venta_plan", "venta_real"]].copy()
@@ -368,7 +368,7 @@ def render_detalle_cliente(df_all, df_cat_all, df_sug_all, cliente_cod, nombre_c
             subset=["Cump"],
         ).set_properties(**{"text-align": "center"})
 
-        st.dataframe(styled_vol, width='stretch', hide_index=True)
+        st.dataframe(styled_vol, use_container_width=True, hide_index=True)
 
     with col_grafico_vol:
         chart_data_vol = df_det[["periodo_label", "vol_ton_plan", "vol_ton_real", "vol_sugerido"]].copy()
@@ -751,7 +751,7 @@ pivot_display = pivot_data.reset_index(drop=True)
 table_height = max(220, min(600, 36 + len(pivot_display) * 24))
 selection = st.dataframe(
     styled_table,
-    width='stretch',
+    use_container_width=True,
     hide_index=True,
     height=table_height,
     on_select="rerun",
@@ -1010,7 +1010,7 @@ else:
                     edit_height = max(220, 36 + len(base_inputs) * 24)
                     edited = st.data_editor(
                         base_inputs,
-                        width='stretch',
+                        use_container_width=True,
                         hide_index=True,
                         height=edit_height,
                         key=f"editor_plan_{jcc}",
@@ -1074,7 +1074,7 @@ else:
 
 
             exp_height = max(460, 36 + len(tabla_comb) * 24)
-            st.dataframe(styled, width='stretch', hide_index=True, height=exp_height)
+            st.dataframe(styled, use_container_width=True, hide_index=True, height=exp_height)
 
             # Graficos de evolucion por cliente (2 por fila)
             df_chart = df_j.copy()

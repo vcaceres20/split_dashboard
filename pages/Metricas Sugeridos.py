@@ -128,7 +128,7 @@ st.dataframe(
         }
     )
     .set_properties(**{"text-align": "center"}),
-    width='stretch',
+    use_container_width=True,
     hide_index=True,
 )
 
@@ -180,7 +180,7 @@ st.dataframe(
         }
     )
     .set_properties(**{"text-align": "center"}),
-    width='stretch',
+    use_container_width=True,
     hide_index=True,
 )
 

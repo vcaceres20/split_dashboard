@@ -255,7 +255,7 @@ with col_tabla:
     ).set_properties(**{"text-align": "center"})
     st.dataframe(
         styled_tabla,
-        width='stretch',
+        use_container_width=True,
         hide_index=True,
         height=max(220, 36 + len(tabla) * 24),
     )
@@ -323,7 +323,7 @@ with col_tabla_sol:
     ).set_properties(**{"text-align": "center"})
     st.dataframe(
         styled_tabla_sol,
-        width='stretch',
+        use_container_width=True,
         hide_index=True,
         height=max(220, 36 + len(tabla_sol) * 24),
     )
