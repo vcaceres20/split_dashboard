@@ -1,4 +1,4 @@
-﻿import streamlit as st
+import streamlit as st
 import pandas as pd
 import numpy as np
 import altair as alt
@@ -9,6 +9,7 @@ from shared import (
     SIN_DATO_LABEL,
     ensure_multiselect_state,
     ensure_radio_state,
+    styler_map_compat,
     multiselect_con_nulos,
     load_df_cus,
     load_df_with_categoria,
@@ -175,7 +176,7 @@ if not df_sug.empty:
 else:
     clientes_sugeridos_set = set()
 
-# Función para colorear celdas segÃºn cumplimiento
+# Funcion para colorear celdas segun cumplimiento
 def color_cumplimiento(val):
     if pd.isna(val) or val == "N/A":
         return 'background-color: white; color: black; font-size: 14px'
@@ -288,13 +289,17 @@ def render_detalle_cliente(df_all, df_cat_all, df_sug_all, cliente_cod, nombre_c
             else:
                 return "background-color: #FF430F; color: white"
 
-        styled_sol = tabla_sol_display.style.format({
-            "Suma de Sol Plan": "{:,.0f}",
-            "Suma de Sol Real": "{:,.0f}",
-            "Cump": lambda x: f"{x:.0%}" if pd.notna(x) else "N/A"
-        }).applymap(color_cumpl_sol, subset=["Cump"]).set_properties(**{"text-align": "center"})
+        styled_sol = styler_map_compat(
+            tabla_sol_display.style.format({
+                "Suma de Sol Plan": "{:,.0f}",
+                "Suma de Sol Real": "{:,.0f}",
+                "Cump": lambda x: f"{x:.0%}" if pd.notna(x) else "N/A"
+            }),
+            color_cumpl_sol,
+            subset=["Cump"],
+        ).set_properties(**{"text-align": "center"})
 
-        st.dataframe(styled_sol, use_container_width=True, hide_index=True)
+        st.dataframe(styled_sol, width='stretch', hide_index=True)
 
     with col_grafico_sol:
         chart_data_sol = df_det[["periodo_label", "venta_plan", "venta_real"]].copy()
@@ -326,7 +331,7 @@ def render_detalle_cliente(df_all, df_cat_all, df_sug_all, cliente_cod, nombre_c
             ]
         ).properties(height=300)
 
-        st.altair_chart(chart_sol, use_container_width=True)
+        st.altair_chart(chart_sol, width='stretch')
 
     # Volumen (Toneladas)
     st.markdown("---")
@@ -352,14 +357,18 @@ def render_detalle_cliente(df_all, df_cat_all, df_sug_all, cliente_cod, nombre_c
 
         tabla_vol_display = pd.concat([tabla_vol, total_row_vol], ignore_index=True)
 
-        styled_vol = tabla_vol_display.style.format({
-            "Suma de Vol Plan": "{:,.0f}",
-            "Suma de Vol Real": "{:,.0f}",
-            "Suma de Vol Sugerido": lambda x: f"{x:,.0f}" if pd.notna(x) else "-",
-            "Cump": lambda x: f"{x:.0%}" if pd.notna(x) else "N/A"
-        }).applymap(color_cumpl_sol, subset=["Cump"]).set_properties(**{"text-align": "center"})
+        styled_vol = styler_map_compat(
+            tabla_vol_display.style.format({
+                "Suma de Vol Plan": "{:,.0f}",
+                "Suma de Vol Real": "{:,.0f}",
+                "Suma de Vol Sugerido": lambda x: f"{x:,.0f}" if pd.notna(x) else "-",
+                "Cump": lambda x: f"{x:.0%}" if pd.notna(x) else "N/A"
+            }),
+            color_cumpl_sol,
+            subset=["Cump"],
+        ).set_properties(**{"text-align": "center"})
 
-        st.dataframe(styled_vol, use_container_width=True, hide_index=True)
+        st.dataframe(styled_vol, width='stretch', hide_index=True)
 
     with col_grafico_vol:
         chart_data_vol = df_det[["periodo_label", "vol_ton_plan", "vol_ton_real", "vol_sugerido"]].copy()
@@ -393,7 +402,7 @@ def render_detalle_cliente(df_all, df_cat_all, df_sug_all, cliente_cod, nombre_c
             ]
         ).properties(height=300)
 
-        st.altair_chart(chart_vol, use_container_width=True)
+        st.altair_chart(chart_vol, width='stretch')
 
     # Mix por Categoria
     st.markdown("---")
@@ -493,7 +502,7 @@ def render_detalle_cliente(df_all, df_cat_all, df_sug_all, cliente_cod, nombre_c
                         alt.Tooltip("valor:Q", title="Valor", format=",.0f")
                     ]
                 ).properties(height=300)
-                st.altair_chart(pie_plan, use_container_width=True)
+                st.altair_chart(pie_plan, width='stretch')
             else:
                 st.info("No hay datos de Plan para este cliente")
 
@@ -512,13 +521,13 @@ def render_detalle_cliente(df_all, df_cat_all, df_sug_all, cliente_cod, nombre_c
                         alt.Tooltip("valor:Q", title="Valor", format=",.0f")
                     ]
                 ).properties(height=300)
-                st.altair_chart(pie_real, use_container_width=True)
+                st.altair_chart(pie_real, width='stretch')
             else:
                 st.info("No hay datos de Real para este cliente")
     else:
         st.info("No hay datos de categorias para este cliente")
 
-# Seleccionar la columna de cumplimiento segÃºn el tipo
+# Seleccionar la columna de cumplimiento segun el tipo
 cumpl_col = f"cumplimiento_{tipo_key}"
 
 # Crear pivot table unica con TODOS los clientes de TODOS los JCC seleccionados
@@ -716,9 +725,10 @@ pivot_data = pivot_data[cols_display]
 styled_table = pivot_data.style.format(formato_dict)
 
 # Aplicar colores a las celdas de cumplimiento (solo meses)
-styled_table = styled_table.applymap(
+styled_table = styler_map_compat(
+    styled_table,
     color_cumplimiento,
-    subset=meses_ordenados
+    subset=meses_ordenados,
 )
 
 # Resaltar meses sugeridos con azul de alto contraste.
@@ -741,7 +751,7 @@ pivot_display = pivot_data.reset_index(drop=True)
 table_height = max(220, min(600, 36 + len(pivot_display) * 24))
 selection = st.dataframe(
     styled_table,
-    use_container_width=True,
+    width='stretch',
     hide_index=True,
     height=table_height,
     on_select="rerun",
@@ -948,8 +958,11 @@ else:
                     fmt[col] = format_plan_real
 
             styled = (
-                tabla_comb.style.format(fmt)
-                .applymap(_color_cumpl, subset=cols_cump)
+                styler_map_compat(
+                    tabla_comb.style.format(fmt),
+                    _color_cumpl,
+                    subset=cols_cump,
+                )
                 .apply(_style_sug, axis=None)
             )
 
@@ -997,7 +1010,7 @@ else:
                     edit_height = max(220, 36 + len(base_inputs) * 24)
                     edited = st.data_editor(
                         base_inputs,
-                        use_container_width=True,
+                        width='stretch',
                         hide_index=True,
                         height=edit_height,
                         key=f"editor_plan_{jcc}",
@@ -1061,7 +1074,7 @@ else:
 
 
             exp_height = max(460, 36 + len(tabla_comb) * 24)
-            st.dataframe(styled, use_container_width=True, hide_index=True, height=exp_height)
+            st.dataframe(styled, width='stretch', hide_index=True, height=exp_height)
 
             # Graficos de evolucion por cliente (2 por fila)
             df_chart = df_j.copy()
@@ -1167,7 +1180,7 @@ else:
                 )
                 with col:
                     st.markdown(f"**{nom_cli}**")
-                    st.altair_chart(chart, use_container_width=True)
+                    st.altair_chart(chart, width='stretch')
                     with st.expander(f"Mix categoría - {nom_cli}", expanded=False):
                         df_mix = df_cat_filt.copy()
                         df_mix["cod_cliente_alicorp_actual"] = df_mix["cod_cliente_alicorp_actual"].astype(str).str.strip()
@@ -1258,7 +1271,7 @@ else:
                                                 alt.Tooltip("valor:Q", title="Valor", format=",.0f"),
                                             ],
                                         ).properties(height=260)
-                                        st.altair_chart(pie_plan, use_container_width=True)
+                                        st.altair_chart(pie_plan, width='stretch')
                                     else:
                                         st.info("No hay datos de Plan para este cliente")
 
@@ -1277,7 +1290,7 @@ else:
                                                 alt.Tooltip("valor:Q", title="Valor", format=",.0f"),
                                             ],
                                         ).properties(height=260)
-                                        st.altair_chart(pie_real, use_container_width=True)
+                                        st.altair_chart(pie_real, width='stretch')
                                     else:
                                         st.info("No hay datos de Real para este cliente")
                             else:
@@ -1348,5 +1361,6 @@ for c, color, label in zip(cols_ley, colores_leyenda, etiquetas_leyenda):
         f"<div>{label}</div></div>",
         unsafe_allow_html=True,
     )
+
 
 

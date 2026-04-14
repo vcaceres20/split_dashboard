@@ -18,7 +18,7 @@ LABELS_INTERVALO = ["Menor a 0%", "0-15%", "15-25%", "25-35%", "35-45%", "45-55%
                     "115-125%", "125-135%", "135-145%", "145-155%", "155-165%",
                     "165-175%", "175-185%", "185-195%", "195-205%", "205-215%",
                     "215-225%", "225-235%", "235-245%", "245-255%", "255-265%",
-                    "265-275%", "275-285%", "285-295%", "295-300%", "Más de 300%"]
+                    "265-275%", "275-285%", "285-295%", "295-300%", "MÃ¡s de 300%"]
 
 BINS_NIVEL = [0, 0.85, 0.95, 1.05, 1.15, float("inf")]
 LABELS_NIVEL = [1, 2, 3, 4, 5]
@@ -129,6 +129,12 @@ def ensure_radio_state(key, options, default=None):
     if key not in st.session_state or st.session_state.get(key) not in options:
         st.session_state[key] = default if default in options else options[0]
     return st.session_state[key]
+
+
+def styler_map_compat(styler, func, subset=None):
+    if hasattr(styler, "map"):
+        return styler.map(func, subset=subset)
+    return styler.applymap(func, subset=subset)
 
 
 

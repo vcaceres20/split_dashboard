@@ -1,4 +1,4 @@
-﻿import streamlit as st
+import streamlit as st
 import pandas as pd
 import numpy as np
 
@@ -128,7 +128,7 @@ st.dataframe(
         }
     )
     .set_properties(**{"text-align": "center"}),
-    use_container_width=True,
+    width='stretch',
     hide_index=True,
 )
 
@@ -180,6 +180,7 @@ st.dataframe(
         }
     )
     .set_properties(**{"text-align": "center"}),
-    use_container_width=True,
+    width='stretch',
     hide_index=True,
 )
+

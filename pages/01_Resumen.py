@@ -1,4 +1,4 @@
-﻿import streamlit as st
+import streamlit as st
 import pandas as pd
 import numpy as np
 import altair as alt
@@ -6,6 +6,7 @@ import altair as alt
 from shared import (
     MES_MAP,
     SIN_DATO_LABEL,
+    styler_map_compat,
     multiselect_con_nulos,
     load_df_base_raw,
     load_df_cus,
@@ -203,7 +204,7 @@ else:
             alt.value("black"),
         ),
     )
-    st.altair_chart((rect + text).properties(height=max(260, 28 * len(zonas_ordenadas))), use_container_width=True)
+    st.altair_chart((rect + text).properties(height=max(260, 28 * len(zonas_ordenadas))), width='stretch')
 
 # Tabla mensual: año, mes, volumen plan/real, cumplimiento
 resumen = (
@@ -242,16 +243,19 @@ col_tabla, col_chart = st.columns([1.1, 1.5])
 
 with col_tabla:
     st.subheader("Resumen Mensual - Volumen")
-    st.dataframe(
+    styled_tabla = styler_map_compat(
         tabla.style
         .format({
             "Sum Vol Plan": "{:,.0f}",
             "Sum Vol Real": "{:,.0f}",
             "Cumplimiento": "{:.1%}",
-        })
-        .applymap(_color_cumpl, subset=["Cumplimiento"])
-        .set_properties(**{"text-align": "center"}),
-        use_container_width=True,
+        }),
+        _color_cumpl,
+        subset=["Cumplimiento"],
+    ).set_properties(**{"text-align": "center"})
+    st.dataframe(
+        styled_tabla,
+        width='stretch',
         hide_index=True,
         height=max(220, 36 + len(tabla) * 24),
     )
@@ -285,7 +289,7 @@ with col_chart:
         )
         .properties(height=320)
     )
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width='stretch')
 
 st.markdown("---")
 st.subheader("Resumen Mensual - Soles")
@@ -307,16 +311,19 @@ tabla_sol.columns = ["Año", "Mes", "Sum Sol Plan", "Sum Sol Real", "Cumplimient
 col_tabla_sol, col_chart_sol = st.columns([1.1, 1.5])
 
 with col_tabla_sol:
-    st.dataframe(
+    styled_tabla_sol = styler_map_compat(
         tabla_sol.style
         .format({
             "Sum Sol Plan": "S/. {:,.0f}",
             "Sum Sol Real": "S/. {:,.0f}",
             "Cumplimiento": "{:.1%}",
-        })
-        .applymap(_color_cumpl, subset=["Cumplimiento"])
-        .set_properties(**{"text-align": "center"}),
-        use_container_width=True,
+        }),
+        _color_cumpl,
+        subset=["Cumplimiento"],
+    ).set_properties(**{"text-align": "center"})
+    st.dataframe(
+        styled_tabla_sol,
+        width='stretch',
         hide_index=True,
         height=max(220, 36 + len(tabla_sol) * 24),
     )
@@ -350,4 +357,5 @@ with col_chart_sol:
         )
         .properties(height=320)
     )
-    st.altair_chart(chart_sol, use_container_width=True)
+    st.altair_chart(chart_sol, width='stretch')
+

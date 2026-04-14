@@ -1,4 +1,4 @@
-﻿# app.py
+# app.py
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -12,6 +12,7 @@ from shared import (
     SIN_DATO_LABEL,
     tabla_histograma,
     matriz_nivel_x_dimension,
+    styler_map_compat,
     multiselect_con_nulos,
     load_df_cus,
 )
@@ -331,7 +332,7 @@ with col_centro:
         })
         .apply(color_fila_rebate, axis=1)
         .set_properties(**{'text-align': 'center'}),
-        use_container_width=True,
+        width='stretch',
         hide_index=True
     )
 
@@ -384,7 +385,7 @@ if not tabla_hist.empty:
             ]
         )
     )
-    st.altair_chart(chart_hist, use_container_width=True)
+    st.altair_chart(chart_hist, width='stretch')
 else:
     st.info("No hay datos para los filtros seleccionados.")
 
@@ -404,7 +405,7 @@ with col_r:
             mat_reg.style
             .format("{:.0%}")
             .set_properties(**{'text-align': 'center'}),
-            use_container_width=True
+            width='stretch'
         )
     else:
         st.write("Sin datos.")
@@ -417,7 +418,7 @@ with col_c:
             mat_can.style
             .format("{:.0%}")
             .set_properties(**{'text-align': 'center'}),
-            use_container_width=True
+            width='stretch'
         )
     else:
         st.write("Sin datos.")
@@ -514,7 +515,7 @@ else:
             tooltip=[],
         )
     )
-    st.altair_chart(chart_evo + chart_text, use_container_width=True)
+    st.altair_chart(chart_evo + chart_text, width='stretch')
 
     tabla_niv = evo.pivot_table(index="periodo_label", columns="Nivel", values="pct", aggfunc="sum")
     orden_presentes = [p for p in periodos_ordenados if p in tabla_niv.index]
@@ -543,10 +544,11 @@ else:
     for col in tabla_niv.columns:
         if col in estilos_por_nivel:
             color_css = estilos_por_nivel[col]
-            styled_niv = styled_niv.applymap(lambda _, css=color_css: css, subset=[col])
+            styled_niv = styler_map_compat(styled_niv, lambda _, css=color_css: css, subset=[col])
 
     st.caption(f"Tabla % {metrica_label} por nivel y mes")
     st.dataframe(
         styled_niv,
-        use_container_width=True
+        width='stretch'
     )
+

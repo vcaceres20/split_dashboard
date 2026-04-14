@@ -1,6 +1,6 @@
-streamlit
-pandas
-numpy
-altair
-google-cloud-bigquery
-google-auth
+streamlit>=1.45,<2
+pandas>=2.2,<3
+numpy>=1.26,<3
+altair>=5.3,<6
+google-cloud-bigquery>=3.30,<4
+google-auth>=2.30,<3
