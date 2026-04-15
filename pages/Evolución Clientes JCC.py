@@ -62,16 +62,16 @@ tipo = st.sidebar.radio("Tipo", ["Soles", "Volumen"], key="evo_tipo")
 st.session_state["evo_mem_tipo"] = tipo
 tipo_key = "sol" if tipo == "Soles" else "vol"
 
-# Filtro de Año - por defecto 2025 y 2026 (si existen)
+# Filtro de año - por defecto 2025 y 2026 (si existen)
 anios = sorted(df["año"].dropna().unique(), reverse=True)
 default_anios = [a for a in [2025, 2026] if a in anios]
 if not default_anios:
     default_anios = [anios[0]] if anios else []
 _restore_multiselect("evo_anio", "evo_mem_anio", anios, default_anios)
-anio_sel = st.sidebar.multiselect("Año", anios, key="evo_anio")
+anio_sel = st.sidebar.multiselect("año", anios, key="evo_anio")
 st.session_state["evo_mem_anio"] = anio_sel
 
-# Filtro de Periodo (Mes-Año) - por defecto últimos 7 periodos
+# Filtro de Periodo (Mes-año) - por defecto Ãºltimos 7 periodos
 df_periodos = df[df["año"].isin(anio_sel)] if anio_sel else df.iloc[0:0]
 periodos_ordenados = sorted(df_periodos["periodo_mes"].dropna().unique().tolist())
 default_periodos = periodos_ordenados[-7:] if len(periodos_ordenados) > 7 else periodos_ordenados
@@ -79,7 +79,7 @@ periodo_labels = [f"{MES_MAP.get(p.month, p.strftime('%m'))} {p.year}" for p in 
 periodo_map = dict(zip(periodo_labels, periodos_ordenados))
 default_labels = [f"{MES_MAP.get(p.month, p.strftime('%m'))} {p.year}" for p in default_periodos]
 _restore_multiselect("evo_periodo", "evo_mem_periodo", periodo_labels, default_labels)
-periodo_sel = st.sidebar.multiselect("Mes-Año", periodo_labels, key="evo_periodo")
+periodo_sel = st.sidebar.multiselect("Mes-año", periodo_labels, key="evo_periodo")
 st.session_state["evo_mem_periodo"] = periodo_sel
 periodo_sel_dt = [periodo_map[p] for p in periodo_sel]
 mask_periodo = df["periodo_mes"].isin(periodo_sel_dt)
@@ -181,7 +181,7 @@ def color_cumplimiento(val):
     if pd.isna(val) or val == "N/A":
         return 'background-color: white; color: black; font-size: 14px'
 
-    # Si es string (puede ser "#¡DIV/0!" o similar)
+    # Si es string (puede ser "#Â¡DIV/0!" o similar)
     if isinstance(val, str):
         return 'background-color: white; color: black; font-size: 14px'
 
@@ -331,7 +331,7 @@ def render_detalle_cliente(df_all, df_cat_all, df_sug_all, cliente_cod, nombre_c
             ]
         ).properties(height=300)
 
-        st.altair_chart(chart_sol, width='stretch')
+        st.altair_chart(chart_sol, use_container_width=True)
 
     # Volumen (Toneladas)
     st.markdown("---")
@@ -402,11 +402,11 @@ def render_detalle_cliente(df_all, df_cat_all, df_sug_all, cliente_cod, nombre_c
             ]
         ).properties(height=300)
 
-        st.altair_chart(chart_vol, width='stretch')
+        st.altair_chart(chart_vol, use_container_width=True)
 
     # Mix por Categoria
     st.markdown("---")
-    st.subheader("Mix por Categoría")
+    st.subheader("Mix por CategorÃ­a")
 
     df_cat_cliente = df_cat_all[df_cat_all["cod_cliente_alicorp_actual"] == cliente_cod].copy()
 
@@ -502,7 +502,7 @@ def render_detalle_cliente(df_all, df_cat_all, df_sug_all, cliente_cod, nombre_c
                         alt.Tooltip("valor:Q", title="Valor", format=",.0f")
                     ]
                 ).properties(height=300)
-                st.altair_chart(pie_plan, width='stretch')
+                st.altair_chart(pie_plan, use_container_width=True)
             else:
                 st.info("No hay datos de Plan para este cliente")
 
@@ -521,7 +521,7 @@ def render_detalle_cliente(df_all, df_cat_all, df_sug_all, cliente_cod, nombre_c
                         alt.Tooltip("valor:Q", title="Valor", format=",.0f")
                     ]
                 ).properties(height=300)
-                st.altair_chart(pie_real, width='stretch')
+                st.altair_chart(pie_real, use_container_width=True)
             else:
                 st.info("No hay datos de Real para este cliente")
     else:
@@ -587,7 +587,7 @@ pivot_data = pivot_data[cols]
 if meses_ordenados:
     mask_vacias = pivot_data[meses_ordenados].isna().all(axis=1)
     pivot_data = pivot_data[~mask_vacias].copy()
-    # Excluir clientes con 5 o más meses vacíos en el cuadro principal.
+    # Excluir clientes con 5 o mÃ¡s meses vacÃ­os en el cuadro principal.
     mask_nulos_principal = pivot_data[meses_ordenados].isna().sum(axis=1) < 5
     pivot_data = pivot_data[mask_nulos_principal].copy()
 
@@ -654,11 +654,11 @@ sp_l, sp_c, sp_r = st.columns([1, 3, 1])
 with sp_c:
     c_k1, c_k2, c_k3, c_k4 = st.columns(4)
     with c_k1:
-        st.markdown(render_card("N° Clientes con sobrecumplimiento", f"{clientes_sobre:,.0f}"), unsafe_allow_html=True)
+        st.markdown(render_card("NÂ° Clientes con sobrecumplimiento", f"{clientes_sobre:,.0f}"), unsafe_allow_html=True)
     with c_k2:
         st.markdown(render_card("% Clientes sobrecumplimiento", f"{pct_sobre:.1%}"), unsafe_allow_html=True)
     with c_k3:
-        st.markdown(render_card("N° Clientes con subcumplimiento", f"{clientes_sub:,.0f}"), unsafe_allow_html=True)
+        st.markdown(render_card("NÂ° Clientes con subcumplimiento", f"{clientes_sub:,.0f}"), unsafe_allow_html=True)
     with c_k4:
         st.markdown(render_card("% Clientes subcumplimiento", f"{pct_sub:.1%}"), unsafe_allow_html=True)
 
@@ -917,7 +917,7 @@ else:
                     ).drop(columns=["_ord_sel", "_is_sel"])
 
             # Excluir clientes con exceso de nulos en la ventana de periodos seleccionada.
-            # Regla: si tiene 5 o más valores None/NaN en Plan/Real/Cumplimiento, no se muestra.
+            # Regla: si tiene 5 o mÃ¡s valores None/NaN en Plan/Real/Cumplimiento, no se muestra.
             cols_nulos = [
                 c
                 for c in tabla_comb.columns
@@ -980,7 +980,7 @@ else:
                     return estilos
                 styled = styled.apply(_resaltar_nombre, axis=1)
 
-            if st.button("Añadir plan", key=f"btn_add_plan_{jcc}"):
+            if st.button("AÃ±adir plan", key=f"btn_add_plan_{jcc}"):
                 st.session_state[f"show_plan_{jcc}"] = True
 
             if f"plan_inputs_{jcc}" not in st.session_state:
@@ -1180,8 +1180,8 @@ else:
                 )
                 with col:
                     st.markdown(f"**{nom_cli}**")
-                    st.altair_chart(chart, width='stretch')
-                    with st.expander(f"Mix categoría - {nom_cli}", expanded=False):
+                    st.altair_chart(chart, use_container_width=True)
+                    with st.expander(f"Mix categorÃ­a - {nom_cli}", expanded=False):
                         df_mix = df_cat_filt.copy()
                         df_mix["cod_cliente_alicorp_actual"] = df_mix["cod_cliente_alicorp_actual"].astype(str).str.strip()
                         df_mix = df_mix[df_mix["cod_cliente_alicorp_actual"] == str(cod_cli)].copy()
@@ -1190,10 +1190,10 @@ else:
                             df_mix = df_mix[df_mix["periodo_mes"].isin(periodo_sel_dt)].copy()
 
                         if df_mix.empty or "des_categoria" not in df_mix.columns:
-                            st.info("No hay datos de mix por categoría.")
+                            st.info("No hay datos de mix por categorÃ­a.")
                         else:
                             tipo_mix = st.radio(
-                                "Selecciona métrica para mix:",
+                                "Selecciona mÃ©trica para mix:",
                                 ["Soles", "Volumen"],
                                 key=f"mix_tipo_{jcc}_{cod_cli}",
                                 horizontal=True,
@@ -1210,11 +1210,11 @@ else:
 
                             if tipo_mix == "Soles":
                                 categoria_sel = st.multiselect(
-                                    "Selecciona Categorías:",
+                                    "Selecciona CategorÃ­as:",
                                     categorias,
                                     default=default_categorias,
                                     key=f"mix_cat_soles_{jcc}_{cod_cli}",
-                                    help="Selecciona las categorías que quieres visualizar en los pie charts",
+                                    help="Selecciona las categorÃ­as que quieres visualizar en los pie charts",
                                 )
                                 cat_filtrado = df_mix.copy()
                                 if categoria_sel:
@@ -1231,11 +1231,11 @@ else:
                                 titulo_real = "Real - Soles"
                             else:
                                 categoria_sel = st.multiselect(
-                                    "Selecciona Categorías:",
+                                    "Selecciona CategorÃ­as:",
                                     categorias,
                                     default=default_categorias,
                                     key=f"mix_cat_vol_{jcc}_{cod_cli}",
-                                    help="Selecciona las categorías que quieres visualizar en los pie charts",
+                                    help="Selecciona las categorÃ­as que quieres visualizar en los pie charts",
                                 )
                                 cat_filtrado = df_mix.copy()
                                 if categoria_sel:
@@ -1264,14 +1264,14 @@ else:
                                             color=alt.Color(
                                                 field="des_categoria",
                                                 type="nominal",
-                                                legend=alt.Legend(title="Categoría", orient="bottom"),
+                                                legend=alt.Legend(title="CategorÃ­a", orient="bottom"),
                                             ),
                                             tooltip=[
-                                                alt.Tooltip("des_categoria:N", title="Categoría"),
+                                                alt.Tooltip("des_categoria:N", title="CategorÃ­a"),
                                                 alt.Tooltip("valor:Q", title="Valor", format=",.0f"),
                                             ],
                                         ).properties(height=260)
-                                        st.altair_chart(pie_plan, width='stretch')
+                                        st.altair_chart(pie_plan, use_container_width=True)
                                     else:
                                         st.info("No hay datos de Plan para este cliente")
 
@@ -1283,18 +1283,18 @@ else:
                                             color=alt.Color(
                                                 field="des_categoria",
                                                 type="nominal",
-                                                legend=alt.Legend(title="Categoría", orient="bottom"),
+                                                legend=alt.Legend(title="CategorÃ­a", orient="bottom"),
                                             ),
                                             tooltip=[
-                                                alt.Tooltip("des_categoria:N", title="Categoría"),
+                                                alt.Tooltip("des_categoria:N", title="CategorÃ­a"),
                                                 alt.Tooltip("valor:Q", title="Valor", format=",.0f"),
                                             ],
                                         ).properties(height=260)
-                                        st.altair_chart(pie_real, width='stretch')
+                                        st.altair_chart(pie_real, use_container_width=True)
                                     else:
                                         st.info("No hay datos de Real para este cliente")
                             else:
-                                st.info("No hay datos de categorías para este cliente")
+                                st.info("No hay datos de categorÃ­as para este cliente")
 
 st.markdown("---")
 st.subheader("Descarga de Plan Ingresado")
@@ -1361,6 +1361,7 @@ for c, color, label in zip(cols_ley, colores_leyenda, etiquetas_leyenda):
         f"<div>{label}</div></div>",
         unsafe_allow_html=True,
     )
+
 
 
 

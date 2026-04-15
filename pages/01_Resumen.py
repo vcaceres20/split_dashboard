@@ -53,7 +53,7 @@ default_anios = [a for a in [2025, 2026] if a in anios]
 if not default_anios:
     default_anios = anios
 _restore_multiselect("res_anio", "res_mem_anio", anios, default_anios)
-anio_sel = st.sidebar.multiselect("Año", anios, key="res_anio")
+anio_sel = st.sidebar.multiselect("año", anios, key="res_anio")
 st.session_state["res_mem_anio"] = anio_sel
 
 df_periodos = df[df["año"].isin(anio_sel)] if anio_sel else df.iloc[0:0]
@@ -62,10 +62,10 @@ periodo_labels = [f"{MES_MAP.get(p.month, p.strftime('%m'))} {p.year}" for p in 
 periodo_map = dict(zip(periodo_labels, periodos_ordenados))
 default_labels = periodo_labels[-7:] if len(periodo_labels) > 7 else periodo_labels
 _restore_multiselect("res_periodo", "res_mem_periodo", periodo_labels, default_labels)
-periodo_sel = st.sidebar.multiselect("Mes-Año", periodo_labels, key="res_periodo")
+periodo_sel = st.sidebar.multiselect("Mes-año", periodo_labels, key="res_periodo")
 st.session_state["res_mem_periodo"] = periodo_sel
 st.sidebar.checkbox(
-    "Seleccionar todo Mes-Año",
+    "Seleccionar todo Mes-año",
     key="sel_all_periodo_resumen",
     on_change=lambda: st.session_state.__setitem__("res_periodo", periodo_labels),
 )
@@ -204,7 +204,7 @@ else:
             alt.value("black"),
         ),
     )
-    st.altair_chart((rect + text).properties(height=max(260, 28 * len(zonas_ordenadas))), width='stretch')
+    st.altair_chart((rect + text).properties(height=max(260, 28 * len(zonas_ordenadas))), use_container_width=True)
 
 # Tabla mensual: año, mes, volumen plan/real, cumplimiento
 resumen = (
@@ -219,7 +219,7 @@ resumen["cumplimiento"] = np.where(resumen["vol_plan"] > 0, resumen["vol_real"] 
 resumen = resumen.sort_values("periodo_mes")
 
 tabla = resumen[["año", "periodo_label", "vol_plan", "vol_real", "cumplimiento"]].copy()
-tabla.columns = ["Año", "Mes", "Sum Vol Plan", "Sum Vol Real", "Cumplimiento"]
+tabla.columns = ["año", "Mes", "Sum Vol Plan", "Sum Vol Real", "Cumplimiento"]
 
 def _color_cumpl(val):
     if pd.isna(val):
@@ -289,7 +289,7 @@ with col_chart:
         )
         .properties(height=320)
     )
-    st.altair_chart(chart, width='stretch')
+    st.altair_chart(chart, use_container_width=True)
 
 st.markdown("---")
 st.subheader("Resumen Mensual - Soles")
@@ -306,7 +306,7 @@ resumen_sol["cumplimiento"] = np.where(resumen_sol["sol_plan"] > 0, resumen_sol[
 resumen_sol = resumen_sol.sort_values("periodo_mes")
 
 tabla_sol = resumen_sol[["año", "periodo_label", "sol_plan", "sol_real", "cumplimiento"]].copy()
-tabla_sol.columns = ["Año", "Mes", "Sum Sol Plan", "Sum Sol Real", "Cumplimiento"]
+tabla_sol.columns = ["año", "Mes", "Sum Sol Plan", "Sum Sol Real", "Cumplimiento"]
 
 col_tabla_sol, col_chart_sol = st.columns([1.1, 1.5])
 
@@ -357,5 +357,6 @@ with col_chart_sol:
         )
         .properties(height=320)
     )
-    st.altair_chart(chart_sol, width='stretch')
+    st.altair_chart(chart_sol, use_container_width=True)
+
 

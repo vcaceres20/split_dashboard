@@ -385,7 +385,7 @@ if not tabla_hist.empty:
             ]
         )
     )
-    st.altair_chart(chart_hist, width='stretch')
+    st.altair_chart(chart_hist, use_container_width=True)
 else:
     st.info("No hay datos para los filtros seleccionados.")
 
@@ -515,7 +515,7 @@ else:
             tooltip=[],
         )
     )
-    st.altair_chart(chart_evo + chart_text, width='stretch')
+    st.altair_chart(chart_evo + chart_text, use_container_width=True)
 
     tabla_niv = evo.pivot_table(index="periodo_label", columns="Nivel", values="pct", aggfunc="sum")
     orden_presentes = [p for p in periodos_ordenados if p in tabla_niv.index]
